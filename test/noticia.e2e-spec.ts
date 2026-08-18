@@ -4,11 +4,13 @@ import { getRepositoryToken } from "@nestjs/typeorm";
 import { Noticia } from "../src/noticia/entities/noticia.entity";
 import { NoticiaController } from "../src/noticia/noticia.controller";
 import { NoticiaService } from "../src/noticia/noticia.service";
+import { NoticiaCacheService } from "../src/noticia/noticia-cache.service";
 import request from "supertest";
 import { App } from "supertest/types";
 
 describe('NoticiaController', () => {
     let app: INestApplication<App>;
+    let cacheService: NoticiaCacheService;
 
     const mockNoticiaRepository = {
         create: jest.fn((dto) => dto),
@@ -25,10 +27,12 @@ describe('NoticiaController', () => {
             controllers: [NoticiaController],
             providers: [
                 NoticiaService,
+                NoticiaCacheService,
                 {provide: getRepositoryToken(Noticia), useValue: mockNoticiaRepository},
             ],
         }).compile();
 
+        cacheService = moduleFixture.get(NoticiaCacheService);
         app = moduleFixture.createNestApplication();
         app.useGlobalPipes(
             new ValidationPipe({
@@ -46,6 +50,7 @@ describe('NoticiaController', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+        cacheService.clear();
     });
 
     describe('dado um payload válido', () => {
@@ -125,6 +130,39 @@ describe('NoticiaController', () => {
                         ],
                     }),
                 );
+            });
+        });
+
+        describe('dado que a mesma consulta é feita duas vezes seguidas', () => {
+            it('então a segunda chamada deve vir do cache, sem consultar o repositório de novo', async () => {
+                const noticias = [{ id: 'id-1', titulo: 'A', descricao: 'B' }];
+                mockNoticiaRepository.findAndCount.mockResolvedValueOnce([noticias, 1]);
+
+                const first = await request(app.getHttpServer()).get('/noticias').expect(200);
+                const second = await request(app.getHttpServer()).get('/noticias').expect(200);
+
+                expect(second.body).toEqual(first.body);
+                expect(mockNoticiaRepository.findAndCount).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        describe('dado que uma noticia é criada após a listagem estar em cache', () => {
+            it('então a próxima listagem deve buscar dados atualizados no repositório', async () => {
+                mockNoticiaRepository.findAndCount.mockResolvedValueOnce([[], 0]);
+                await request(app.getHttpServer()).get('/noticias').expect(200);
+
+                await request(app.getHttpServer())
+                    .post('/noticias')
+                    .send({ titulo: 'Nova', descricao: 'Notícia nova' })
+                    .expect(201);
+
+                mockNoticiaRepository.findAndCount.mockResolvedValueOnce([
+                    [{ id: 'id-2', titulo: 'Nova', descricao: 'Notícia nova' }],
+                    1,
+                ]);
+                await request(app.getHttpServer()).get('/noticias').expect(200);
+
+                expect(mockNoticiaRepository.findAndCount).toHaveBeenCalledTimes(2);
             });
         });
     });

@@ -1,9 +1,10 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { Noticia } from "./entities/noticia.entity";
-import { Repository } from "typeorm";
+import { ILike, Repository } from "typeorm";
 import { CreateNoticiaDto } from "./dto/create-noticia.dto";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { UpdateNoticiaDto } from "./dto/update-noticia.dto";
+import { FindNoticiasQueryDto } from "./dto/find-noticias-query.dto";
 
 @Injectable()
 export class NoticiaService {
@@ -16,8 +17,28 @@ export class NoticiaService {
         return await this.noticiaRepository.save(noticia);
     }
 
-    async findAll(): Promise<Noticia[]> {
-        return this.noticiaRepository.find();
+    async findAll(query: FindNoticiasQueryDto) {
+        const { page, limit, search } = query;
+
+        const where = search
+            ? [{ titulo: ILike(`%${search}%`) }, { descricao: ILike(`%${search}%`) }]
+            : undefined;
+
+        const [data, total] = await this.noticiaRepository.findAndCount({
+            where,
+            skip: (page - 1) * limit,
+            take: limit,
+        });
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
     }
 
     async findOne(id: string): Promise<Noticia> {

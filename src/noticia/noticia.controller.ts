@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { NoticiaService } from "./noticia.service";
 import { UpdateNoticiaDto } from "./dto/update-noticia.dto";
 import { CreateNoticiaDto } from "./dto/create-noticia.dto";
+import { FindNoticiasQueryDto } from "./dto/find-noticias-query.dto";
 
 @Controller('noticias')
 export class NoticiaController {
@@ -13,8 +14,8 @@ export class NoticiaController {
     }
 
     @Get()
-    findAll() {
-        return this.noticiaService.findAll();
+    findAll(@Query() query: FindNoticiasQueryDto) {
+        return this.noticiaService.findAll(query);
     }
 
     @Get(':id')

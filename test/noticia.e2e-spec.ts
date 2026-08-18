@@ -15,7 +15,7 @@ describe('NoticiaController', () => {
         save: jest.fn((noticia) => 
             Promise.resolve({ id: 'a1b2c3d4-0000-4000-8000-000000000000', ...noticia }),   
         ),
-        find: jest.fn(),
+        findAndCount: jest.fn(),
         findOneBy: jest.fn(),
         remove: jest.fn(),
     };
@@ -76,18 +76,55 @@ describe('NoticiaController', () => {
 
     describe('GET /noticias', () => {
         describe('dado que existem noticias cadastradas', () => {
-            it('então deve retornar a lista de noticias com status 200', async () => {
+            it('então deve retornar a lista paginada com status 200', async () => {
                 const noticias = [
                     { id: 'id-1', titulo: 'A', descricao: 'B' },
                     { id: 'id-2', titulo: 'C', descricao: 'D' },
                 ];
-                mockNoticiaRepository.find.mockResolvedValueOnce(noticias);
+                mockNoticiaRepository.findAndCount.mockResolvedValueOnce([noticias, 2]);
 
                 const response = await request(app.getHttpServer())
                     .get('/noticias')
                     .expect(200);
 
-                expect(response.body).toEqual(noticias);
+                expect(response.body).toEqual({
+                    data: noticias,
+                    meta: { total: 2, page: 1, limit: 10, totalPages: 1 },
+                });
+            });
+        });
+
+        describe('dado os parâmetros page e limit', () => {
+            it('então deve repassá-los para a consulta e para os metadados', async () => {
+                mockNoticiaRepository.findAndCount.mockResolvedValueOnce([[], 0]);
+
+                const response = await request(app.getHttpServer())
+                    .get('/noticias?page=2&limit=5')
+                    .expect(200);
+
+                expect(response.body.meta).toEqual({ total: 0, page: 2, limit: 5, totalPages: 0 });
+                expect(mockNoticiaRepository.findAndCount).toHaveBeenCalledWith(
+                    expect.objectContaining({ skip: 5, take: 5 }),
+                );
+            });
+        });
+
+        describe('dado o parâmetro search', () => {
+            it('então deve filtrar por título ou descrição', async () => {
+                mockNoticiaRepository.findAndCount.mockResolvedValueOnce([[], 0]);
+
+                await request(app.getHttpServer())
+                    .get('/noticias?search=eleicoes')
+                    .expect(200);
+
+                expect(mockNoticiaRepository.findAndCount).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        where: [
+                            { titulo: expect.anything() },
+                            { descricao: expect.anything() },
+                        ],
+                    }),
+                );
             });
         });
     });

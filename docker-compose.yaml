@@ -1,5 +1,18 @@
 services:
 
+  backend:
+    build: .
+    container_name: backend
+    restart: always
+    ports:
+      - 3000:3000
+    volumes:
+      - './:/app'
+    environment:
+      DB_HOST: db
+    depends_on:
+      - db
+
   db:
     image: postgres:18
     restart: always

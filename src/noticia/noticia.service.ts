@@ -7,7 +7,7 @@ import { UpdateNoticiaDto } from "./dto/update-noticia.dto";
 import { FindNoticiasQueryDto } from "./dto/find-noticias-query.dto";
 import { NoticiaCacheService } from "./noticia-cache.service";
 
-interface PaginatedNoticias {
+export interface PaginatedNoticias {
     data: Noticia[];
     meta: {
         total: number;

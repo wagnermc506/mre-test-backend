@@ -8,7 +8,7 @@ on:
   # Otherwise we can trigger it by creating a pull request on any branch
   pull_request:
     branches:
-      - '*'
+      - '**'
     types:
       - opened
       - reopened
@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -39,5 +39,8 @@ jobs:
       - name: Code Formatting
         run: yarn format:check
 
-      - name: Unit Tests
+      - name: E2E tests
         run: yarn test:e2e
+
+      - name: Build with docker
+        run: docker build . -f ops/Dockerfile -t mre-test-backend:check

@@ -1,0 +1,46 @@
+name: Code Hygiene and Build
+
+on:
+
+  # NOTE: The following line allows us to manually trigger this workflow
+  workflow_dispatch:
+
+  # Otherwise we can trigger it by creating a pull request on any branch
+  pull_request:
+    branches:
+      - '**'
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+
+jobs:
+  code-hygiene:
+    name: Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'yarn'
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Linting
+        run: yarn lint
+
+      - name: Code Formatting
+        run: yarn format:check
+
+      - name: E2E tests
+        run: yarn test:e2e
+
+      - name: Build with docker
+        run: docker build . -f ops/Dockerfile -t mre-test-backend:check

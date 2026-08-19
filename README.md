@@ -79,6 +79,15 @@ Nesse modo, backend e banco sobem juntos como containers, definidos em `docker-c
 
    Adicione `-v` ao comando acima caso queira também apagar o volume com os dados do Postgres.
 
+## Ambiente de produção
+
+A aplicação está implantada em uma VPS, com TLS via nginx + certbot no host:
+
+- Backend (API): https://api.frostware.com.br
+- Frontend: https://app.frostware.com.br
+
+Detalhes da implantação em [docs/implantacao.md](docs/implantacao.md).
+
 ## Testes
 
 Nenhum teste depende de um banco de dados rodando.
@@ -98,4 +107,5 @@ yarn test:cov
 ## Documentação
 
 - [Estrutura de pastas e preparação para escalar](docs/estrutura-e-escalabilidade.md)
+- [Implantação (VPS)](docs/implantacao.md)
 

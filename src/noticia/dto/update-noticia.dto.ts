@@ -1,12 +1,12 @@
-import { IsOptional, IsString, MaxLength } from "class-validator";
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateNoticiaDto {
-    @IsString()
-    @MaxLength(255)
-    @IsOptional()
-    titulo: string;
+  @IsString()
+  @MaxLength(255)
+  @IsOptional()
+  titulo: string;
 
-    @IsString()
-    @IsOptional()
-    descricao: string;
+  @IsString()
+  @IsOptional()
+  descricao: string;
 }
